@@ -1,0 +1,56 @@
+#Files must be organized by date to properly use this method. 
+#Only csv's to be loaded may be located in directory.
+
+setwd("C:/Users/Galen/Documents/COVID-data/csse_covid_19_daily_reports/raw_csv")
+number.parsed = length(data.files)
+tester = number.parsed - 1
+new.data = list.files()[-1:-number.parsed]
+header.type = c()
+
+for (x in 1:length(new.data)) {
+  print(new.data[x])
+  being.read <- read.csv(new.data[x], stringsAsFactors = FALSE, header = TRUE)
+  header.type[x] <- length(colnames(being.read))
+  
+  date.observed = as.Date(substr(data.files[x], 1, 10), format = "%m-%d-%Y")
+  Date = rep(date.observed, nrow(being.read))
+  being.read <- cbind(being.read, Date)
+  
+  # This currently only reads files after 3-21-20 (header.type of 12 or 14) 
+  # This is due to formatting ease and information contained
+  
+  if (header.type[x] == 6) {
+    print("Variables not able to be adapted.")
+  } 
+  
+  else if (header.type[x] == 8) {
+    print("Variables not able to be adapted.")
+  } 
+  
+  else if (header.type[x] == 12) {
+    colnames(being.read)[1] <- "FIPS"
+    being.read$Lat <- NULL
+    being.read$Long_ <- NULL
+    being.read$Combined_Key <- NULL
+    being.read <- being.read[being.read$Country_Region == "US",]
+    
+    full.dat <- rbind(full.dat, being.read)
+  } 
+  
+  else if (header.type[x] == 14) {
+    being.read$Lat <- NULL
+    being.read$Long_ <- NULL
+    being.read$Combined_Key <- NULL
+    being.read$Incidence_Rate <- NULL
+    being.read$Case.Fatality_Ratio <- NULL
+    being.read <- being.read[being.read$Country_Region == "US",]
+    
+    full.dat <- rbind(full.dat, being.read)
+  } 
+  else {
+    print("Unsupported variables. Loop broken.")
+    break
+  }
+}
+
+data.files = list.files()
