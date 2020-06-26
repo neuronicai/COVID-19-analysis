@@ -1,0 +1,76 @@
+# Loads data into large data frame from John's Hopkins University Coronavirus Research Center
+# https://github.com/CSSEGISandData/COVID-19
+# Take care: this data frame can get extremely big without limits on variables or date ranges
+
+data.files = list.files()
+header.type = c()
+
+#This loop regularizes each csv file:
+  #Prints file name
+  #Reads the csv file into a data frame
+  #Determines what variables it has (header.type)
+  #Eliminates variables of my choice and adds the date it was acquired
+  #Removes non-US data
+  #Checks whether this data set is the first usable data set (based on whether enough variables were collected)
+  #Creates full data frame if the first usable data set, or merges with the existing full data set
+
+first.valid = FALSE
+
+for (x in 1:length(data.files)) {
+  print(data.files[x])
+  being.read <- read.csv(data.files[x], stringsAsFactors = FALSE, header = TRUE)
+  header.type[x] <- length(colnames(being.read))
+  
+  date.observed = as.Date(substr(data.files[x], 1, 10), format = "%m-%d-%Y")
+  Date = rep(date.observed, nrow(being.read))
+  being.read <- cbind(being.read, Date)
+  
+  # This currently only reads files after 3-21-20 (header.type of 12 or 14) 
+  # This is due to formatting ease and information contained
+  if (header.type[x] == 6) {
+    print("Variables not able to be adapted.")
+  } 
+  
+  else if (header.type[x] == 8) {
+    print("Variables not able to be adapted.")
+  } 
+  
+  else if (header.type[x] == 12) {
+    colnames(being.read)[1] <- "FIPS"
+    being.read$Lat <- NULL
+    being.read$Long_ <- NULL
+    being.read$Combined_Key <- NULL
+    being.read <- being.read[being.read$Country_Region == "US",]
+    
+    if (first.valid == FALSE){
+      full.dat <- being.read
+      first.valid = TRUE
+      print("First valid")
+    } 
+    else {
+      full.dat <- rbind(full.dat, being.read)
+    }
+  } 
+  
+  else if (header.type[x] == 14) {
+    being.read$Lat <- NULL
+    being.read$Long_ <- NULL
+    being.read$Combined_Key <- NULL
+    being.read$Incidence_Rate <- NULL
+    being.read$Case.Fatality_Ratio <- NULL
+    being.read <- being.read[being.read$Country_Region == "US",]
+    
+    if (first.valid == FALSE){
+      full.dat <- being.read
+      first.valid = TRUE
+      print("First valid")
+    } 
+    else {
+      full.dat <- rbind(full.dat, being.read)
+    }
+  } 
+  else {
+    break
+  }
+}
+rm(list = c("being.read", "first.valid", "header.type", "date.observed"))
